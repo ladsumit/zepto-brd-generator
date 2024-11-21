@@ -30,9 +30,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-textPrimary flex flex-col items-center justify-center">
       <div className="w-full max-w-md bg-cardBg p-6 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-accent mb-6">BRD Generator</h1>
+      <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-500 to-indigo-500 text-transparent bg-clip-text mb-4">
+        BRD Generator
+      </h1>
+
         <div className="mb-4">
-          <label className="block text-textSecondary mb-1">Product Name</label>
+          <label className="block text-textPrimary font-bold text-lg mb-2">Product Name</label>
           <input
             type="text"
             className="w-full px-4 py-2 bg-background border border-textSecondary rounded text-textPrimary"
@@ -41,7 +44,7 @@ export default function Home() {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-textSecondary mb-1">Goals</label>
+          <label className="block text-textPrimary font-bold text-lg mb-2">Goals</label>
           <textarea
             className="w-full px-4 py-2 bg-background border border-textSecondary rounded text-textPrimary"
             rows={3}
@@ -50,7 +53,7 @@ export default function Home() {
           ></textarea>
         </div>
         <div className="mb-4">
-          <label className="block text-textSecondary mb-1">
+          <label className="block text-textPrimary font-bold text-lg mb-2">
             Features (Optional)
           </label>
           <textarea
@@ -70,8 +73,8 @@ export default function Home() {
       </div>
       {result && (
         <div className="mt-8 p-6 bg-cardBg rounded-lg shadow-lg w-full max-w-md">
-          <h2 className="text-xl font-bold text-accent mb-4">Generated BRD</h2>
-          <p className="text-textSecondary whitespace-pre-line">{result}</p>
+          <h2 className="block text-textPrimary font-bold text-lg mb-2">Generated BRD</h2>
+          <p className="text-textPrimary font-medium whitespace-pre-line text-xlg">{result}</p>
         </div>
       )}
     </div>
