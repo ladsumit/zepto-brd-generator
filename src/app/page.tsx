@@ -64,7 +64,7 @@ export default function Home() {
           ></textarea>
         </div>
         <button
-          className="w-full bg-buttonBg hover:bg-buttonHover text-white py-2 px-4 rounded-lg font-semibold"
+          className="bg-gradient-to-r from-purple-500 to-blue-500 text-white w-full bg-buttonBg hover:bg-buttonHover text-white py-2 px-4 rounded-lg font-semibold"
           onClick={generateBRD}
           disabled={loading}
         >
