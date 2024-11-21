@@ -9,8 +9,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
         foreground: "var(--foreground)",
+        background: "#1E1E2F", // Dark background
+        accent: "#8E44AD", // Purple accent
+        textPrimary: "#FFFFFF", // White text
+        textSecondary: "#B3B3C6", // Light gray text
+        cardBg: "#2C2C3E", // Card background
+        buttonBg: "#6C63FF", // Button background
+        buttonHover: "#8E75FF", // Button hover color
       },
     },
   },
