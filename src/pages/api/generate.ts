@@ -58,10 +58,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: "No choices returned from OpenAI API" });
         }
 
+        const cleanContent = removeMarkdown(data.choices[0].message.content.trim());
+
         // Return the generated BRD
-        res.status(200).json({ brd: data.choices[0].message.content.trim() });
+        res.status(200).json({ brd: cleanContent });
     } catch (error) {
         console.error("Error generating BRD:", error);
         res.status(500).json({ error: "Failed to generate BRD" });
     }
 }
+
+function removeMarkdown(text: string): string {
+    return text.replace(/[#*`_~>]/g, "").trim();
+  }
+  
