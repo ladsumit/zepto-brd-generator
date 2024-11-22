@@ -7,7 +7,8 @@ import { doc, getDoc } from "firebase/firestore";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function CollaborationPage() {
-  const { id } = useParams<{ id: string }>(); // Retrieve BRD ID from URL
+  const params = useParams(); // Retrieve parameters from the URL
+  const id = params?.id as string | undefined; // Ensure `id` is correctly typed and can be undefined
 
   // State hooks
   const [brdData, setBrdData] = useState<any>(null);
