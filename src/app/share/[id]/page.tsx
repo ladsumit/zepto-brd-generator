@@ -13,11 +13,25 @@ import {
 } from "firebase/firestore";
 import { auth } from "@/lib/firebase";
 
+type Comment = {
+  id: string;
+  content: string;
+  createdBy: string;
+  createdAt: any; // Replace `any` with a proper Firestore timestamp type if available
+};
+
+interface BRDDetails {
+  content: string;
+  title?: string;
+  goals?: string;
+  features?: string;
+}
+
 export default function SharePage() {
-  const [brdDetails, setBrdDetails] = useState(null); // Store full BRD details
+  const [brdDetails, setBrdDetails] = useState<BRDDetails | null>(null); // Store full BRD details
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [comments, setComments] = useState([]); // Store comments
+  const [comments, setComments] = useState<Comment[]>([]); // Store comments with proper type
   const [newComment, setNewComment] = useState(""); // Store new comment input
   const params = useParams(); // Retrieve parameters from the URL
   const id = params?.id as string | undefined; // Ensure `id` is correctly typed and can be undefined
@@ -47,7 +61,7 @@ export default function SharePage() {
           const commentsData = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
-          }));
+          })) as Comment[]; // Type assertion for comments
           setComments(commentsData);
         });
 
@@ -63,37 +77,36 @@ export default function SharePage() {
     fetchShareDetails();
   }, [id]);
 
-  const addComment = async () => {
+  const addComment = async () => { // Mark the function as `async`
     if (!newComment.trim()) return; // Avoid adding empty comments
-
+  
     try {
-
       // Fetch share details using the shareId
       const shareRes = await fetch(`/api/share?id=${id}`);
       if (!shareRes.ok) {
         throw new Error("Failed to fetch share details");
       }
       const shareData = await shareRes.json();
-
+  
       // Use the BRD ID and authenticated user
       const brdId = shareData.brdId;
       const userId = auth.currentUser?.uid;
-      const createdBy = auth.currentUser?.email;
-
+      const createdBy = auth.currentUser?.email || "Anonymous"; // Fallback to "Anonymous"
+  
       if (!brdId || !userId) {
         throw new Error("Missing BRD ID or user information");
       }
-
-      const commentData = {
+  
+      const commentData: Omit<Comment, "id"> = {
         content: newComment,
-        createdBy,
+        createdBy, // Always a string now
         createdAt: serverTimestamp(),
       };
-
+  
       // Add the comment to Firestore
       const commentsRef = collection(db, "brds", brdId, "comments");
-      await addDoc(commentsRef, commentData);
-
+      await addDoc(commentsRef, commentData); // Now valid since the function is async
+  
       // Clear the comment input
       setNewComment("");
     } catch (error) {
@@ -101,8 +114,6 @@ export default function SharePage() {
       setError("Failed to add comment. Please try again.");
     }
   };
-
-  
   
 
   if (loading) {
@@ -116,7 +127,7 @@ export default function SharePage() {
   return (
     <div className="min-h-screen bg-background text-textPrimary flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-cardBg p-6 rounded-lg shadow-lg">
-      <p>Welcome, {auth.currentUser?.email}</p>
+        <p>Welcome, {auth.currentUser?.email}</p>
         <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-500 to-indigo-500 text-transparent bg-clip-text mb-4">
           Shared BRD
         </h1>

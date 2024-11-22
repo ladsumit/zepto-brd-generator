@@ -1,11 +1,11 @@
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
 import { nanoid } from "nanoid";
+import { NextApiRequest, NextApiResponse } from "next";
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
 
-  // Handle POST: Create a shareable link
   if (method === "POST") {
     const { brdId, password } = req.body;
 
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
         brdId,
         password,
         shareId,
-        createdAt: new Date(),
+        createdAt: new Date().toISOString(),
       });
 
       return res.status(200).json({
@@ -31,11 +31,11 @@ export default async function handler(req, res) {
     }
   }
 
-  // Handle GET: Retrieve shared BRD details by shareId
   if (method === "GET") {
-    const { id } = req.query; // Retrieve `id` from the query string
-    if (!id) {
-      return res.status(400).json({ error: "Missing share ID" });
+    const { id } = req.query;
+
+    if (!id || typeof id !== "string") {
+      return res.status(400).json({ error: "Missing or invalid share ID" });
     }
 
     try {

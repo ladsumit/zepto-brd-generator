@@ -1,28 +1,32 @@
-import { db } from "@/lib/firebase";
+import { NextApiRequest, NextApiResponse } from "next";
 import { collection, addDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { brdId, comment, userId } = req.body;
-
-  if (!brdId || !comment || !userId) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
   try {
-    const docRef = await addDoc(collection(db, "comments"), {
-      brdId,
-      comment,
-      userId,
-      createdAt: new Date(),
-    });
+    const { brdId, content, createdBy } = req.body;
 
-    res.status(201).json({ id: docRef.id });
+    if (!brdId || !content || !createdBy) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const commentsRef = collection(db, "brds", brdId, "comments");
+
+    const newComment = {
+      content,
+      createdBy,
+      createdAt: new Date().toISOString(),
+    };
+
+    const docRef = await addDoc(commentsRef, newComment);
+
+    return res.status(200).json({ id: docRef.id, ...newComment });
   } catch (error) {
     console.error("Error adding comment:", error);
-    res.status(500).json({ error: "Failed to add comment" });
+    return res.status(500).json({ error: "Failed to add comment" });
   }
 }
