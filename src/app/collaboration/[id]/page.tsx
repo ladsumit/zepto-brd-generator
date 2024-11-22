@@ -7,7 +7,10 @@ import { doc, getDoc } from "firebase/firestore";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function CollaborationPage() {
-  const { id } = useParams(); // Retrieve BRD ID from URL
+  const { id } = useParams<{ id: string }>(); // Retrieve BRD ID from URL
+  if (!id) {
+    return <div>Error: No ID provided</div>; // Handle case where ID is missing
+  }
   const [brdData, setBrdData] = useState(null);
   const [error, setError] = useState("");
   const [shareLink, setShareLink] = useState(""); // State for the shareable link
