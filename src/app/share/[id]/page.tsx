@@ -19,7 +19,8 @@ export default function SharePage() {
   const [error, setError] = useState("");
   const [comments, setComments] = useState([]); // Store comments
   const [newComment, setNewComment] = useState(""); // Store new comment input
-  const { id } = useParams(); // Get the share ID from URL
+  const params = useParams(); // Retrieve parameters from the URL
+  const id = params?.id as string | undefined; // Ensure `id` is correctly typed and can be undefined
 
   useEffect(() => {
     const fetchShareDetails = async () => {
