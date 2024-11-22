@@ -1,4 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { db } from "@/lib/firebase"; // Import Firestore instance
+import { collection, addDoc } from "firebase/firestore";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Only accept POST requests
@@ -30,7 +32,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         4. High-level project risks or assumptions.
         Make the document concise, professional, and tailored for a technical and business audience.`;
 
-
     try {
         // Call OpenAI API
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -60,15 +61,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const cleanContent = removeMarkdown(data.choices[0].message.content.trim());
 
-        // Return the generated BRD
-        res.status(200).json({ brd: cleanContent });
+        // NEW: Save the BRD to Firestore
+        const brdsCollection = collection(db, "brds");
+        const docRef = await addDoc(brdsCollection, {
+            productName,
+            goals,
+            features: features || "No specific features provided",
+            content: cleanContent,
+            createdAt: new Date(),
+        });
+
+        // NEW: Return both the BRD content and its unique ID
+        res.status(200).json({ brdId: docRef.id, brd: cleanContent });
     } catch (error) {
         console.error("Error generating BRD:", error);
         res.status(500).json({ error: "Failed to generate BRD" });
     }
 }
 
+// Helper function to clean up Markdown-like syntax
 function removeMarkdown(text: string): string {
     return text.replace(/[#*`_~>]/g, "").trim();
-  }
-  
+}
