@@ -8,16 +8,20 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function CollaborationPage() {
   const { id } = useParams<{ id: string }>(); // Retrieve BRD ID from URL
-  if (!id) {
-    return <div>Error: No ID provided</div>; // Handle case where ID is missing
-  }
-  const [brdData, setBrdData] = useState(null);
-  const [error, setError] = useState("");
-  const [shareLink, setShareLink] = useState(""); // State for the shareable link
-  const [loading, setLoading] = useState(false); // Loading state for sharing
 
+  // State hooks
+  const [brdData, setBrdData] = useState<any>(null);
+  const [error, setError] = useState<string>("");
+  const [shareLink, setShareLink] = useState<string>(""); // State for the shareable link
+  const [loading, setLoading] = useState<boolean>(false); // Loading state for sharing
+
+  // useEffect for fetching BRD details
   useEffect(() => {
-    // Fetch BRD data
+    if (!id) {
+      setError("No ID provided");
+      return;
+    }
+
     const fetchBRD = async () => {
       try {
         const docRef = doc(db, "brds", id);
@@ -26,7 +30,6 @@ export default function CollaborationPage() {
         if (docSnap.exists()) {
           setBrdData(docSnap.data());
         } else {
-          console.error("No such BRD document!");
           setError("BRD not found.");
         }
       } catch (error) {
@@ -35,11 +38,16 @@ export default function CollaborationPage() {
       }
     };
 
-    if (id) fetchBRD();
+    fetchBRD();
   }, [id]);
 
   // Function to create a shareable link
   const createShareLink = async () => {
+    if (!id) {
+      setError("BRD ID is required to create a shareable link.");
+      return;
+    }
+
     setLoading(true);
     setShareLink(""); // Clear any previous link
     setError("");
@@ -66,6 +74,7 @@ export default function CollaborationPage() {
     }
   };
 
+  // Render different states
   if (error) {
     return <div className="text-red-500 text-center">{error}</div>;
   }
@@ -74,57 +83,58 @@ export default function CollaborationPage() {
     return <div className="text-center">Loading BRD...</div>;
   }
 
+  // Main UI
   return (
     <ProtectedRoute>
-    <div className="min-h-screen bg-background text-textPrimary flex flex-col items-center justify-center">
-      <div className="w-full max-w-2xl bg-cardBg p-6 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold mb-4">Collaboration Page</h1>
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold">BRD Details:</h2>
-          <p className="text-lg">
-            <strong>Title:</strong> {brdData.productName || "N/A"}
-          </p>
-          <p className="text-lg">
-            <strong>Goals:</strong> {brdData.goals || "N/A"}
-          </p>
-          <p className="text-lg">
-            <strong>Features:</strong> {brdData.features || "N/A"}
-          </p>
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold">Full BRD:</h2>
-          <p className="text-lg whitespace-pre-line">
-            {brdData.content || "No content available."}
-          </p>
-        </div>
+      <div className="min-h-screen bg-background text-textPrimary flex flex-col items-center justify-center">
+        <div className="w-full max-w-2xl bg-cardBg p-6 rounded-lg shadow-lg">
+          <h1 className="text-3xl font-bold mb-4">Collaboration Page</h1>
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold">BRD Details:</h2>
+            <p className="text-lg">
+              <strong>Title:</strong> {brdData.productName || "N/A"}
+            </p>
+            <p className="text-lg">
+              <strong>Goals:</strong> {brdData.goals || "N/A"}
+            </p>
+            <p className="text-lg">
+              <strong>Features:</strong> {brdData.features || "N/A"}
+            </p>
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold">Full BRD:</h2>
+            <p className="text-lg whitespace-pre-line">
+              {brdData.content || "No content available."}
+            </p>
+          </div>
 
-        {/* Share Button */}
-        <div className="mt-6">
-          <button
-            className="bg-gradient-to-r from-purple-500 to-blue-500 text-white w-full py-2 px-4 rounded-lg font-semibold"
-            onClick={createShareLink}
-            disabled={loading}
-          >
-            {loading ? "Creating Link..." : "Generate Shareable Link"}
-          </button>
+          {/* Share Button */}
+          <div className="mt-6">
+            <button
+              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white w-full py-2 px-4 rounded-lg font-semibold"
+              onClick={createShareLink}
+              disabled={loading}
+            >
+              {loading ? "Creating Link..." : "Generate Shareable Link"}
+            </button>
 
-          {/* Display Shareable Link */}
-          {shareLink && (
-            <div className="mt-4 text-center">
-              <p className="text-lg font-medium">Shareable Link:</p>
-              <a
-                href={shareLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 underline"
-              >
-                {shareLink}
-              </a>
-            </div>
-          )}
+            {/* Display Shareable Link */}
+            {shareLink && (
+              <div className="mt-4 text-center">
+                <p className="text-lg font-medium">Shareable Link:</p>
+                <a
+                  href={shareLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 underline"
+                >
+                  {shareLink}
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
     </ProtectedRoute>
   );
 }
