@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "bcrypt": "^5.1.1",
+    "firebase": "^11.0.2",
+    "firebase-auth": "^0.1.2",
     "next": "15.0.3",
     "openai": "^4.73.0",
     "react": "19.0.0-rc-66855b96-20241106",
