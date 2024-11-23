@@ -1,22 +1,42 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import { db } from "@/lib/firebase";
+import { useParams, useRouter } from "next/navigation";
+import { db, auth } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function CollaborationPage() {
-  const params = useParams(); // Retrieve parameters from the URL
-  const id = params?.id as string | undefined; // Ensure `id` is correctly typed and can be undefined
+  const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string | undefined;
 
   // State hooks
   const [brdData, setBrdData] = useState<any>(null);
   const [error, setError] = useState<string>("");
-  const [shareLink, setShareLink] = useState<string>(""); // State for the shareable link
-  const [loading, setLoading] = useState<boolean>(false); // Loading state for sharing
+  const [shareLink, setShareLink] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [user, setUser] = useState(auth.currentUser);
 
-  // useEffect for fetching BRD details
+  // Listen to auth state changes
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Function to log out the user
+  const logout = async () => {
+    try {
+      await auth.signOut();
+      setUser(null);
+      router.push("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
+  // Fetch BRD details
   useEffect(() => {
     if (!id) {
       setError("No ID provided");
@@ -29,12 +49,13 @@ export default function CollaborationPage() {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
+          console.log("Fetched BRD data:", docSnap.data()); // Debugging
           setBrdData(docSnap.data());
         } else {
           setError("BRD not found.");
         }
-      } catch (error) {
-        console.error("Error fetching BRD:", error);
+      } catch (err) {
+        console.error("Error fetching BRD:", err);
         setError("Failed to fetch BRD data.");
       }
     };
@@ -53,11 +74,16 @@ export default function CollaborationPage() {
     setShareLink(""); // Clear any previous link
     setError("");
 
+    if(!user) {
+      router.push(`/login?redirect=/collaboration/${id}`)
+      return;
+    }
+
     try {
       const response = await fetch("/api/share", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brdId: id, password: "default-password" }), // Optional: Use dynamic passwords
+        body: JSON.stringify({ brdId: id, password: "default-password" }),
       });
 
       if (!response.ok) {
@@ -86,56 +112,65 @@ export default function CollaborationPage() {
 
   // Main UI
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-background text-textPrimary flex flex-col items-center justify-center">
-        <div className="w-full max-w-2xl bg-cardBg p-6 rounded-lg shadow-lg">
+    <div className="min-h-screen bg-background text-textPrimary flex flex-col items-center justify-center">
+      <div className="w-full max-w-2xl bg-cardBg p-6 rounded-lg shadow-lg">
+        <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold mb-4">Collaboration Page</h1>
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold">BRD Details:</h2>
-            <p className="text-lg">
-              <strong>Title:</strong> {brdData.productName || "N/A"}
-            </p>
-            <p className="text-lg">
-              <strong>Goals:</strong> {brdData.goals || "N/A"}
-            </p>
-            <p className="text-lg">
-              <strong>Features:</strong> {brdData.features || "N/A"}
-            </p>
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold">Full BRD:</h2>
-            <p className="text-lg whitespace-pre-line">
-              {brdData.content || "No content available."}
-            </p>
-          </div>
-
-          {/* Share Button */}
-          <div className="mt-6">
+          {user && (
             <button
-              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white w-full py-2 px-4 rounded-lg font-semibold"
-              onClick={createShareLink}
-              disabled={loading}
+              onClick={logout}
+              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white py-2 px-4 rounded-lg font-semibold"
             >
-              {loading ? "Creating Link..." : "Generate Shareable Link"}
+              Logout
             </button>
+          )}
+        </div>
 
-            {/* Display Shareable Link */}
-            {shareLink && (
-              <div className="mt-4 text-center">
-                <p className="text-lg font-medium">Shareable Link:</p>
-                <a
-                  href={shareLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 underline"
-                >
-                  {shareLink}
-                </a>
-              </div>
-            )}
-          </div>
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold">BRD Details:</h2>
+          <p className="text-lg">
+            <strong>Title:</strong> {brdData.productName || "N/A"}
+          </p>
+          <p className="text-lg">
+            <strong>Goals:</strong> {brdData.goals || "N/A"}
+          </p>
+          <p className="text-lg">
+            <strong>Features:</strong> {brdData.features || "N/A"}
+          </p>
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold">Full BRD:</h2>
+          <p className="text-lg whitespace-pre-line">
+            {brdData.content || "No content available."}
+          </p>
+        </div>
+
+        {/* Share Button */}
+        <div className="mt-6">
+          <button
+            className="bg-gradient-to-r from-purple-500 to-blue-500 text-white w-full py-2 px-4 rounded-lg font-semibold"
+            onClick={createShareLink}
+            disabled={loading}
+          >
+            {loading ? "Creating Link..." : "Generate Shareable Link"}
+          </button>
+
+          {/* Display Shareable Link */}
+          {shareLink && (
+            <div className="mt-4 text-center">
+              <p className="text-lg font-medium">Shareable Link:</p>
+              <a
+                href={shareLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline"
+              >
+                {shareLink}
+              </a>
+            </div>
+          )}
         </div>
       </div>
-    </ProtectedRoute>
+    </div>
   );
 }

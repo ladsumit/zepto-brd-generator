@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  const [redirect, setRedirect] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const redirectParam = params.get("redirect");
+    setRedirect(redirectParam || "/");
+  }, []);
+
   const handleAuth = async () => {
     try {
       if (isSignUp) {
@@ -19,7 +27,7 @@ export default function LoginPage() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      router.push("/"); // Redirect to home page after successful login
+      router.push(redirect || "/");
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     }
