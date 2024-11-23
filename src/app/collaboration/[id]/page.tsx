@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { db, auth } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 export default function CollaborationPage() {
   const router = useRouter();
@@ -16,6 +16,7 @@ export default function CollaborationPage() {
   const [shareLink, setShareLink] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [user, setUser] = useState(auth.currentUser);
+  const [isEditing, setIsEditing] = useState(false); // Track edit mode
 
   // Listen to auth state changes
   useEffect(() => {
@@ -49,7 +50,6 @@ export default function CollaborationPage() {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          console.log("Fetched BRD data:", docSnap.data()); // Debugging
           setBrdData(docSnap.data());
         } else {
           setError("BRD not found.");
@@ -63,6 +63,27 @@ export default function CollaborationPage() {
     fetchBRD();
   }, [id]);
 
+  // Save updated BRD details
+  const saveEdits = async () => {
+    if (!brdData || !id) return;
+
+    try {
+      const brdDocRef = doc(db, "brds", id);
+
+      await updateDoc(brdDocRef, {
+        productName: brdData.productName || "",
+        goals: brdData.goals || "",
+        features: brdData.features || "",
+        content: brdData.content || "",
+      });
+
+      setIsEditing(false); // Exit edit mode
+    } catch (err) {
+      console.error("Error saving edits:", err);
+      setError("Failed to save edits. Please try again.");
+    }
+  };
+
   // Function to create a shareable link
   const createShareLink = async () => {
     if (!id) {
@@ -74,8 +95,8 @@ export default function CollaborationPage() {
     setShareLink(""); // Clear any previous link
     setError("");
 
-    if(!user) {
-      router.push(`/login?redirect=/collaboration/${id}`)
+    if (!user) {
+      router.push(`/login?redirect=/collaboration/${id}`);
       return;
     }
 
@@ -127,22 +148,74 @@ export default function CollaborationPage() {
         </div>
 
         <div className="mb-4">
-          <h2 className="text-xl font-semibold">BRD Details:</h2>
-          <p className="text-lg">
-            <strong>Title:</strong> {brdData.productName || "N/A"}
-          </p>
-          <p className="text-lg">
-            <strong>Goals:</strong> {brdData.goals || "N/A"}
-          </p>
-          <p className="text-lg">
-            <strong>Features:</strong> {brdData.features || "N/A"}
-          </p>
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold">Full BRD:</h2>
-          <p className="text-lg whitespace-pre-line">
-            {brdData.content || "No content available."}
-          </p>
+          <div className="flex justify-between">
+            <h2 className="text-xl font-semibold">BRD Details:</h2>
+            {user && (
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className="text-blue-500 underline"
+              >
+                {isEditing ? "Cancel" : "Edit"}
+              </button>
+            )}
+          </div>
+          {isEditing ? (
+            <div>
+              <textarea
+                className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
+                rows={3}
+                value={brdData.productName}
+                onChange={(e) =>
+                  setBrdData({ ...brdData, productName: e.target.value })
+                }
+                placeholder="Product Name"
+              />
+              <textarea
+                className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
+                rows={3}
+                value={brdData.goals}
+                onChange={(e) => setBrdData({ ...brdData, goals: e.target.value })}
+                placeholder="Goals"
+              />
+              <textarea
+                className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
+                rows={3}
+                value={brdData.features}
+                onChange={(e) =>
+                  setBrdData({ ...brdData, features: e.target.value })
+                }
+                placeholder="Features"
+              />
+              <textarea
+                className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
+                rows={5}
+                value={brdData.content}
+                onChange={(e) => setBrdData({ ...brdData, content: e.target.value })}
+                placeholder="Full BRD Content"
+              />
+              <button
+                onClick={saveEdits}
+                className="bg-gradient-to-r from-purple-500 to-blue-500 text-white py-2 px-4 mt-2 rounded-lg font-semibold"
+              >
+                Save Changes
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p className="text-lg">
+                <strong>Title:</strong> {brdData.productName || "N/A"}
+              </p>
+              <p className="text-lg">
+                <strong>Goals:</strong> {brdData.goals || "N/A"}
+              </p>
+              <p className="text-lg">
+                <strong>Features:</strong> {brdData.features || "N/A"}
+              </p>
+              <p className="text-lg whitespace-pre-line">
+                <strong>Content:</strong> {brdData.content || "No content available."}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Share Button */}
