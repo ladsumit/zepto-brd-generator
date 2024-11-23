@@ -10,13 +10,16 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  doc,
+  updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 
 type Comment = {
   id: string;
   content: string;
   createdBy: string;
-  createdAt: any; // Replace `any` with a proper Firestore timestamp type if available
+  createdAt: any;
 };
 
 interface BRDDetails {
@@ -27,56 +30,59 @@ interface BRDDetails {
 }
 
 export default function SharePage() {
-  const [brdDetails, setBrdDetails] = useState<BRDDetails | null>(null); // Store full BRD details
+  const [brdDetails, setBrdDetails] = useState<BRDDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [comments, setComments] = useState<Comment[]>([]); // Store comments
-  const [newComment, setNewComment] = useState(""); // Store new comment input
-  const params = useParams(); // Retrieve parameters from the URL
-  const id = params?.id as string | undefined; // Ensure `id` is correctly typed and can be undefined
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [editCommentId, setEditCommentId] = useState<string | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
+  const [isEditing, setIsEditing] = useState(false); // Tracks BRD editing state
+  const params = useParams();
+  const id = params?.id as string | undefined;
   const router = useRouter();
-  const [user, setUser] = useState(auth.currentUser); // Track current user state
+  const [user, setUser] = useState(auth.currentUser);
 
   // Listen to auth state changes
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-      setUser(currentUser); // Update user state on login/logout
+      setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
-  
+
+  // Fetch BRD details and comments
   useEffect(() => {
     const fetchShareDetails = async () => {
       try {
-        // Fetch share details using the shareId
+        if (!id) throw new Error("Share ID is missing");
+
+        // Fetch share details
         const shareRes = await fetch(`/api/share?id=${id}`);
-        if (!shareRes.ok) {
-          throw new Error("Failed to fetch share details");
-        }
+        if (!shareRes.ok) throw new Error("Failed to fetch share details");
         const shareData = await shareRes.json();
 
-        // Use the retrieved brdId to fetch the actual BRD details
+        // Fetch BRD details
         const brdRes = await fetch(`/api/brds/${shareData.brdId}`);
-        if (!brdRes.ok) {
-          throw new Error("Failed to fetch BRD details");
-        }
+        if (!brdRes.ok) throw new Error("Failed to fetch BRD details");
         const brdData = await brdRes.json();
+
         setBrdDetails(brdData);
 
-        // Listen to real-time comments for the BRD
+        // Fetch comments
         const commentsRef = collection(db, "brds", shareData.brdId, "comments");
         const q = query(commentsRef, orderBy("createdAt", "asc"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
           const commentsData = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
-          })) as Comment[]; // Type assertion for comments
+          })) as Comment[];
           setComments(commentsData);
         });
 
-        return () => unsubscribe(); // Clean up listener
+        return () => unsubscribe();
       } catch (err: any) {
-        console.error("Error fetching data:", err);
+        console.error("Error fetching details:", err.message);
         setError(err.message || "Something went wrong.");
       } finally {
         setLoading(false);
@@ -86,48 +92,102 @@ export default function SharePage() {
     fetchShareDetails();
   }, [id]);
 
-  const addComment = async () => {
-    if (!newComment.trim()) return; // Avoid adding empty comments
-  
+  // Save updated BRD details
+  const saveEdits = async () => {
+    if (!brdDetails || !id) return;
+
     try {
-      // Fetch share details using the shareId
       const shareRes = await fetch(`/api/share?id=${id}`);
-      if (!shareRes.ok) {
-        throw new Error("Failed to fetch share details");
-      }
+      if (!shareRes.ok) throw new Error("Failed to fetch share details");
       const shareData = await shareRes.json();
-  
-      // Use the BRD ID and authenticated user
+      const brdDocRef = doc(db, "brds", shareData.brdId);
+
+      await updateDoc(brdDocRef, {
+        content: brdDetails.content,
+        title: brdDetails.title || "",
+        goals: brdDetails.goals || "",
+        features: brdDetails.features || "",
+      });
+
+      setIsEditing(false); // Exit edit mode
+    } catch (err) {
+      console.error("Error saving edits:", err);
+      setError("Failed to save edits. Please try again.");
+    }
+  };
+
+  // Add a new comment
+  const addComment = async () => {
+    if (!newComment.trim()) return;
+
+    try {
+      const shareRes = await fetch(`/api/share?id=${id}`);
+      if (!shareRes.ok) throw new Error("Failed to fetch share details");
+      const shareData = await shareRes.json();
+
       const brdId = shareData.brdId;
-      const createdBy = user?.email || "Anonymous"; // Fallback to "Anonymous"
-  
-      if (!brdId || !user) {
-        throw new Error("User must be logged in to add a comment");
-      }
-  
+      const createdBy = user?.email || "Anonymous";
+
       const commentData: Omit<Comment, "id"> = {
         content: newComment,
         createdBy,
         createdAt: serverTimestamp(),
       };
-  
-      // Add the comment to Firestore
+
       const commentsRef = collection(db, "brds", brdId, "comments");
       await addDoc(commentsRef, commentData);
-  
-      // Clear the comment input
-      setNewComment("");
-    } catch (error) {
-      console.error("Error adding comment:", error);
+
+      setNewComment(""); // Clear input
+    } catch (err) {
+      console.error("Error adding comment:", err);
       setError("Failed to add comment. Please try again.");
     }
   };
-  
+
+  // Edit a comment
+  const saveEditedComment = async () => {
+    if (!editCommentId || !editCommentContent.trim()) return;
+
+    try {
+      const shareRes = await fetch(`/api/share?id=${id}`);
+      if (!shareRes.ok) throw new Error("Failed to fetch share details");
+      const shareData = await shareRes.json();
+
+      const brdId = shareData.brdId;
+      const commentDocRef = doc(db, "brds", brdId, "comments", editCommentId);
+
+      await updateDoc(commentDocRef, { content: editCommentContent });
+
+      setEditCommentId(null);
+      setEditCommentContent("");
+    } catch (err) {
+      console.error("Error editing comment:", err);
+      setError("Failed to edit comment. Please try again.");
+    }
+  };
+
+  // Delete a comment
+  const deleteComment = async (commentId: string) => {
+    try {
+      const shareRes = await fetch(`/api/share?id=${id}`);
+      if (!shareRes.ok) throw new Error("Failed to fetch share details");
+      const shareData = await shareRes.json();
+
+      const brdId = shareData.brdId;
+      const commentDocRef = doc(db, "brds", brdId, "comments", commentId);
+
+      await deleteDoc(commentDocRef);
+    } catch (err) {
+      console.error("Error deleting comment:", err);
+      setError("Failed to delete comment. Please try again.");
+    }
+  };
+
   const logout = async () => {
     try {
       await auth.signOut();
-      setUser(null); // Clear user state
-      router.push(`/login?redirect=/share/${id}`); // Redirect to login
+      setUser(null);
+      router.push(`/login?redirect=/share/${id}`);
     } catch (error) {
       console.error("Error logging out:", error);
     }
@@ -158,19 +218,88 @@ export default function SharePage() {
         <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-500 to-indigo-500 text-transparent bg-clip-text mb-4">
           Shared BRD
         </h1>
-        <div className="mb-4">
-          <h2 className="text-2xl font-bold text-textPrimary">BRD Details</h2>
-          <p className="mt-2 whitespace-pre-line text-textSecondary">
-            {brdDetails?.content || "No content available"}
-          </p>
-        </div>
+        {brdDetails && (
+          <div className="mb-4">
+            <div className="flex justify-between">
+              <h2 className="text-2xl font-bold text-textPrimary">BRD Details</h2>
+              {user && (
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="text-blue-500 underline"
+                >
+                  {isEditing ? "Cancel" : "Edit"}
+                </button>
+              )}
+            </div>
+            {isEditing ? (
+              <div>
+                <textarea
+                  className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
+                  rows={5}
+                  value={brdDetails.content}
+                  onChange={(e) =>
+                    setBrdDetails({ ...brdDetails, content: e.target.value })
+                  }
+                />
+                <button
+                  onClick={saveEdits}
+                  className="bg-gradient-to-r from-purple-500 to-blue-500 text-white py-2 px-4 mt-2 rounded-lg font-semibold"
+                >
+                  Save Changes
+                </button>
+              </div>
+            ) : (
+              <p className="mt-2 whitespace-pre-line text-textSecondary">
+                {brdDetails.content || "No content available"}
+              </p>
+            )}
+          </div>
+        )}
         <div className="mt-6">
           <h2 className="text-2xl font-bold text-textPrimary mb-2">Comments</h2>
           <div className="space-y-4">
             {comments.map((comment) => (
               <div key={comment.id} className="bg-background p-4 rounded-lg shadow">
-                <p className="text-sm text-textSecondary">{comment.createdBy}</p>
-                <p className="text-textPrimary">{comment.content}</p>
+                <div className="flex justify-between">
+                  <p className="text-sm text-textSecondary">{comment.createdBy}</p>
+                  {user?.email === comment.createdBy && (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => {
+                          setEditCommentId(comment.id);
+                          setEditCommentContent(comment.content);
+                        }}
+                        className="text-blue-500 underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteComment(comment.id)}
+                        className="text-red-500 underline"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {editCommentId === comment.id ? (
+                  <div>
+                    <textarea
+                      className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
+                      rows={2}
+                      value={editCommentContent}
+                      onChange={(e) => setEditCommentContent(e.target.value)}
+                    />
+                    <button
+                      onClick={saveEditedComment}
+                      className="bg-gradient-to-r from-purple-500 to-blue-500 text-white py-1 px-2 mt-2 rounded-lg font-semibold"
+                    >
+                      Save
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-textPrimary">{comment.content}</p>
+                )}
               </div>
             ))}
           </div>
