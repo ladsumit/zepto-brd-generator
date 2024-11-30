@@ -201,6 +201,23 @@ export default function SharePage() {
     return <div className="text-center text-red-500">{error}</div>;
   }
 
+  const viewUserStories = async () => {
+    try{
+      const shareRes = await fetch(`/api/share?id=${id}`);
+      if (!shareRes.ok) throw new Error("Failed to fetch share details");
+      const shareData = await shareRes.json();
+      const brdId = shareData.brdId;
+      if(!brdId) {
+        console.error("BRD id is missing");
+        return;
+      }
+      router.push(`/userstories/${brdId}`);
+    } catch (err) {
+      console.error("Error Viewing User Stories:", err);
+      setError("Failed to View User Stories. Please try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-textPrimary flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-cardBg p-6 rounded-lg shadow-lg">
@@ -317,6 +334,12 @@ export default function SharePage() {
                 className="bg-gradient-to-r from-purple-500 to-blue-500 text-white w-full mt-2 py-2 px-4 rounded-lg font-semibold"
               >
                 Add Comment
+              </button>
+              <button
+                onClick={viewUserStories}
+                className="bg-gradient-to-r from-purple-500 to-blue-500 text-white w-full mt-2 py-2 px-4 rounded-lg font-semibold"
+              >
+                View User Stories
               </button>
             </div>
           ) : (

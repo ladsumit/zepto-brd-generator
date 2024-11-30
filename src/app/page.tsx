@@ -29,7 +29,7 @@ export default function Home() {
         throw new Error(error || "Failed to generate BRD");
       }
 
-      const { brdId } = await res.json(); // Backend now returns `brdId`
+      const { brdId } = await res.json();
       router.push(`/collaboration/${brdId}`); // Redirect to collaboration page
     } catch (err: any) {
       console.error("Error generating BRD:", err);

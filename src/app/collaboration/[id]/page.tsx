@@ -131,6 +131,14 @@ export default function CollaborationPage() {
     return <div className="text-center">Loading BRD...</div>;
   }
 
+  const viewUserStories = async () => {
+    if(!id) {
+      console.error("BRD id is missing");
+      return;
+    }
+    router.push(`/userstories/${id}`);
+  };
+
   // Main UI
   return (
     <div className="min-h-screen bg-background text-textPrimary flex flex-col items-center justify-center">
@@ -221,13 +229,12 @@ export default function CollaborationPage() {
         {/* Share Button */}
         <div className="mt-6">
           <button
-            className="bg-gradient-to-r from-purple-500 to-blue-500 text-white w-full py-2 px-4 rounded-lg font-semibold"
+            className="bg-gradient-to-r from-purple-500 to-blue-500 text-white w-full mt-2 py-2 px-4 rounded-lg font-semibold"
             onClick={createShareLink}
             disabled={loading}
           >
             {loading ? "Creating Link..." : "Generate Shareable Link"}
           </button>
-
           {/* Display Shareable Link */}
           {shareLink && (
             <div className="mt-4 text-center">
@@ -242,6 +249,12 @@ export default function CollaborationPage() {
               </a>
             </div>
           )}
+          <button
+            className="bg-gradient-to-r from-purple-500 to-blue-500 text-white w-full mt-2 py-2 px-4 rounded-lg font-semibold"
+            onClick={viewUserStories}
+          >
+            View User Stories
+          </button>
         </div>
       </div>
     </div>
