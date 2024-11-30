@@ -71,7 +71,7 @@ export default function CollaborationPage() {
       const brdDocRef = doc(db, "brds", id);
 
       await updateDoc(brdDocRef, {
-        productName: brdData.productName || "",
+        title: brdData.title || "",
         goals: brdData.goals || "",
         features: brdData.features || "",
         content: brdData.content || "",
@@ -172,11 +172,11 @@ export default function CollaborationPage() {
               <textarea
                 className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
                 rows={3}
-                value={brdData.productName}
+                value={brdData.title}
                 onChange={(e) =>
-                  setBrdData({ ...brdData, productName: e.target.value })
+                  setBrdData({ ...brdData, title: e.target.value })
                 }
-                placeholder="Product Name"
+                placeholder="Title"
               />
               <textarea
                 className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
@@ -211,7 +211,7 @@ export default function CollaborationPage() {
           ) : (
             <div>
               <p className="text-lg">
-                <strong>Title:</strong> {brdData.productName || "N/A"}
+                <strong>Title:</strong> {brdData.title || "N/A"}
               </p>
               <p className="text-lg">
                 <strong>Goals:</strong> {brdData.goals || "N/A"}

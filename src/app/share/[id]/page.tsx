@@ -252,6 +252,30 @@ export default function SharePage() {
               <div>
                 <textarea
                   className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
+                  rows={3}
+                  value={brdDetails.title}
+                  onChange={(e) =>
+                    setBrdDetails({ ...brdDetails, title: e.target.value })
+                  }
+                />
+                <textarea
+                  className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
+                  rows={3}
+                  value={brdDetails.goals}
+                  onChange={(e) =>
+                    setBrdDetails({ ...brdDetails, goals: e.target.value })
+                  }
+                />
+                <textarea
+                  className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
+                  rows={3}
+                  value={brdDetails.features}
+                  onChange={(e) =>
+                    setBrdDetails({ ...brdDetails, features: e.target.value })
+                  }
+                />
+                <textarea
+                  className="w-full mt-2 p-2 bg-background border border-textSecondary rounded text-textPrimary"
                   rows={5}
                   value={brdDetails.content}
                   onChange={(e) =>
@@ -266,9 +290,20 @@ export default function SharePage() {
                 </button>
               </div>
             ) : (
+              <div>
+              <p className="mt-2 whitespace-pre-line text-textSecondary">
+              <strong>Title:</strong>{brdDetails.title || "No content available"}
+              </p>
+              <p className="mt-2 whitespace-pre-line text-textSecondary">
+              <strong>Goals:</strong>{brdDetails.goals || "No content available"}
+              </p>
+              <p className="mt-2 whitespace-pre-line text-textSecondary">
+              <strong>Features:</strong>{brdDetails.features || "No content available"}
+              </p>
               <p className="mt-2 whitespace-pre-line text-textSecondary">
                 {brdDetails.content || "No content available"}
               </p>
+              </div>
             )}
           </div>
         )}
