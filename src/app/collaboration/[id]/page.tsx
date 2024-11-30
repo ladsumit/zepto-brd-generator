@@ -144,7 +144,7 @@ export default function CollaborationPage() {
     <div className="min-h-screen bg-background text-textPrimary flex flex-col items-center justify-center">
       <div className="w-full max-w-2xl bg-cardBg p-6 rounded-lg shadow-lg">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold mb-4">Collaboration Page</h1>
+          <h1 className="text-3xl font-bold mb-4">Product Roadmap</h1>
           {user && (
             <button
               onClick={logout}
@@ -157,7 +157,7 @@ export default function CollaborationPage() {
 
         <div className="mb-4">
           <div className="flex justify-between">
-            <h2 className="text-xl font-semibold">BRD Details:</h2>
+            <h2 className="text-xl font-semibold">Product Requirements:</h2>
             {user && (
               <button
                 onClick={() => setIsEditing(!isEditing)}

@@ -10,7 +10,7 @@ export default {
     extend: {
       colors: {
         foreground: "var(--foreground)",
-        background: "#1E1E2F", // Dark background
+        background: "#0a0a0a", // Dark background
         accent: "#8E44AD", // Purple accent
         textPrimary: "#FFFFFF", // White text
         textSecondary: "#B3B3C6", // Light gray text

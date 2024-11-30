@@ -233,12 +233,12 @@ export default function SharePage() {
           )}
         </div>
         <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-500 to-indigo-500 text-transparent bg-clip-text mb-4">
-          Shared BRD
+          Shared Product Requirements
         </h1>
         {brdDetails && (
           <div className="mb-4">
             <div className="flex justify-between">
-              <h2 className="text-2xl font-bold text-textPrimary">BRD Details</h2>
+              <h2 className="text-2xl font-bold text-textPrimary">Product Requirements Document</h2>
               {user && (
                 <button
                   onClick={() => setIsEditing(!isEditing)}

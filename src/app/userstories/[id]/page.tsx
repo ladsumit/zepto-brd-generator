@@ -119,7 +119,7 @@ export default function UserStoriesPage() {
 
         {/* BRD Details Section */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold">BRD Details</h2>
+          <h2 className="text-xl font-semibold">Product Requirements</h2>
           <div className="mt-2">
             <p>
               <strong>Title:</strong> {brdDetails?.productName || "N/A"}

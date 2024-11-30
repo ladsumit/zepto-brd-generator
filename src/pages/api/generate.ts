@@ -20,12 +20,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Construct the OpenAI prompt
-    const prompt = `Generate a Business Requirements Document (BRD) based on the following details:
+    const prompt = `Generate a Product Requirements Document (PRD) based on the following details:
         - Product Name: ${productName}
         - Goals: ${goals}
         - Features: ${features || "No specific features provided"}
 
-        The BRD should include:
+        The PRD should include:
         1. An executive summary.
         2. Key objectives.
         3. Functional requirements.
